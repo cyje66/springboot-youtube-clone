@@ -28,7 +28,7 @@ public class S3Service implements FileService {
         // prepare a key
         var filenameExtension = StringUtils.getFilenameExtension(file.getOriginalFilename());
 
-        var key = UUID.randomUUID() + filenameExtension;
+        var key = UUID.randomUUID() + "." + filenameExtension;
 
         var metadata = new ObjectMetadata();
         metadata.setContentLength(file.getSize());
