@@ -14,6 +14,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +25,7 @@ public class UserRegistrationService {
 
     private final UserRepository userRepository;
 
-    public void registerUser(String tokenValue) {
+    public String registerUser(String tokenValue) {
         // Make a call to the userInfo Endpoint
         HttpRequest httpRequest = HttpRequest.newBuilder()
                 .GET()
@@ -42,15 +43,20 @@ public class UserRegistrationService {
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             UserInfoDTO userInfoDTO = objectMapper.readValue(body, UserInfoDTO.class);
 
-            User user = new User();
-            user.setFirstname(userInfoDTO.getGivenName());
-            user.setLastName(userInfoDTO.getFamilyName());
-            user.setFullName(userInfoDTO.getName());
-            user.setEmailAddress(userInfoDTO.getEmail());
-            user.setSub(userInfoDTO.getSub());
+            Optional<User> userBySubject = userRepository.findBySub(userInfoDTO.getSub());
 
-            userRepository.save(user);
+            if (userBySubject.isPresent()) {
+                return userBySubject.get().getId();
+            } else {
+                User user = new User();
+                user.setFirstname(userInfoDTO.getGivenName());
+                user.setLastName(userInfoDTO.getFamilyName());
+                user.setFullName(userInfoDTO.getName());
+                user.setEmailAddress(userInfoDTO.getEmail());
+                user.setSub(userInfoDTO.getSub());
 
+                return userRepository.save(user).getId();
+            }
         } catch (IOException e) {
             throw new RuntimeException("Exception occurred while registering user", e);
         } catch (InterruptedException e) {
